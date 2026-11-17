@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1189 841" width="1189" height="841"><style>
+  .bd{fill:none;stroke:#111;stroke-width:1.6}.th{fill:none;stroke:#111;stroke-width:0.9}.tn{fill:none;stroke:#111;stroke-width:0.35}
+  .gr{stroke:#999;stroke-width:0.35;stroke-dasharray:6 2 1 2}.col{fill:#111}.core{fill:#d9d9d9;stroke:#111;stroke-width:0.8}
+  .hatch{fill:#ececec;stroke:#111;stroke-width:0.6}.dash{fill:none;stroke:#111;stroke-width:0.7;stroke-dasharray:5 3}
+  .pool{fill:#dfeef5;stroke:#111;stroke-width:0.6}.mul{stroke:#111;stroke-width:0.3}
+  text{font-family:Arial,Helvetica,sans-serif;fill:#111}.t1{font-size:15px;font-weight:700}.t2{font-size:9px}.t3{font-size:6.5px}.dim{font-size:6px}.lab{font-size:7px;font-weight:700}
+</style><rect width="1189" height="841" fill="#fff"/>
+<rect class="bd" x="10" y="10" width="1169" height="821"/>
+<rect class="th" x="849" y="671" width="330" height="160"/>
+<text class="t3" x="859" y="681">GENERAL NOTES</text><text class="t3" x="859" y="691">1. STRUCTURE: STEEL FRAME, COLUMNS AND BEAMS ENCASED IN CONCRETE.</text><text class="t3" x="859" y="701">2. CONCRETE CORE SHEAR WALLS TO FLOOR 17.</text><text class="t3" x="859" y="711">3. CURTAIN WALL: BRONZE MULLIONS, MUNTZ METAL SPANDRELS, 1/4&quot; TINTED PLATE GLASS.</text><text class="t3" x="859" y="721">4. SERPENTINE MARBLE CLADDING ON THE SPINE.</text><text class="t3" x="859" y="731">5. TRAVERTINE LOBBY WALLS AND COLUMN CLADDING.</text><text class="t3" x="859" y="741">6. GRANITE LOBBY FLOOR.</text><text class="t3" x="859" y="751">7. 18 PASSENGER ELEVATORS IN THE CORE.</text><text class="t3" x="859" y="761">8. 3 BASEMENT LEVELS UNDER THE FULL LOT.</text>
+<text class="t1" x="859" y="779">SEAGRAM BUILDING</text>
+<text class="t2" x="859" y="792">375 PARK AVENUE, NEW YORK</text>
+<text class="t2" x="859" y="805">GROUND FLOOR AND SITE PLAN · SCALE 1:125</text>
+<text class="t1" x="1167" y="779" text-anchor="end">A-101</text>
+<text class="t3" x="859" y="823">RECONSTRUCTION FROM PUBLISHED DIMENSIONS · INDICATIVE ONLY</text>
+<rect class="bd" x="120" y="120" width="719.3" height="487.7"/>
+<line class="tn" x1="120" y1="94" x2="839.3" y2="94"/><line class="tn" x1="120" y1="91" x2="120" y2="97"/><line class="tn" x1="839.3" y1="91" x2="839.3" y2="97"/><text class="dim" x="479.7" y="92" text-anchor="middle">295'-0&quot;</text>
+<line class="tn" x1="76" y1="120" x2="76" y2="607.7"/><line class="tn" x1="73" y1="120" x2="79" y2="120"/><line class="tn" x1="73" y1="607.7" x2="79" y2="607.7"/><text class="dim" x="73" y="363.8" text-anchor="end">200'-0&quot;</text>
+<text class="t2" transform="translate(56 363.8) rotate(-90)" text-anchor="middle">PARK AVENUE</text>
+<text class="t2" x="479.7" y="647.7" text-anchor="middle">EAST 52ND STREET</text><text class="t2" x="479.7" y="76" text-anchor="middle">EAST 53RD STREET</text>
+<rect class="th" x="339.5" y="187.1" width="231.6" height="353.6"/>
+<text class="lab" x="455.3" y="363.8" text-anchor="middle">TOWER · 38 STORIES + MECH</text>
+<rect class="th" x="571.1" y="120" width="219.5" height="487.7"/>
+<text class="lab" x="680.8" y="583.7" text-anchor="middle">REAR WINGS · 4 STORIES</text>
+<rect class="dash" x="571.1" y="260.2" width="219.5" height="207.3"/>
+<text class="lab" x="680.8" y="363.8" text-anchor="middle">CENTRAL BUSTLE · 10 STORIES</text>
+<line class="tn" x1="120" y1="177.1" x2="339.5" y2="177.1"/><line class="tn" x1="120" y1="174.1" x2="120" y2="180.1"/><line class="tn" x1="339.5" y1="174.1" x2="339.5" y2="180.1"/><text class="dim" x="229.7" y="175.1" text-anchor="middle">90'-0&quot;</text>
+<rect class="col" x="338.9" y="530" width="6" height="6"/>
+<rect class="col" x="338.9" y="462.3" width="6" height="6"/>
+<rect class="col" x="338.9" y="394.7" width="6" height="6"/>
+<rect class="col" x="338.9" y="327" width="6" height="6"/>
+<rect class="col" x="338.9" y="259.3" width="6" height="6"/>
+<rect class="col" x="338.9" y="191.7" width="6" height="6"/>
+<rect class="col" x="406.5" y="530" width="6" height="6"/>
+<rect class="col" x="406.5" y="462.3" width="6" height="6"/>
+<rect class="col" x="406.5" y="394.7" width="6" height="6"/>
+<rect class="col" x="406.5" y="327" width="6" height="6"/>
+<rect class="col" x="406.5" y="259.3" width="6" height="6"/>
+<rect class="col" x="406.5" y="191.7" width="6" height="6"/>
+<rect class="col" x="474.2" y="530" width="6" height="6"/>
+<rect class="col" x="474.2" y="462.3" width="6" height="6"/>
+<rect class="col" x="474.2" y="394.7" width="6" height="6"/>
+<rect class="col" x="474.2" y="327" width="6" height="6"/>
+<rect class="col" x="474.2" y="259.3" width="6" height="6"/>
+<rect class="col" x="474.2" y="191.7" width="6" height="6"/>
+<rect class="col" x="541.9" y="530" width="6" height="6"/>
+<rect class="col" x="541.9" y="462.3" width="6" height="6"/>
+<rect class="col" x="541.9" y="394.7" width="6" height="6"/>
+<rect class="col" x="541.9" y="327" width="6" height="6"/>
+<rect class="col" x="541.9" y="259.3" width="6" height="6"/>
+<rect class="col" x="541.9" y="191.7" width="6" height="6"/>
+<rect class="tn" x="122.4" y="187.1" width="214.7" height="353.6"/><text class="lab" x="229.7" y="363.8" text-anchor="middle">GRANITE PLAZA</text>
+<rect class="pool" x="173.6" y="375.8" width="112.2" height="152.8"/><text class="t3" x="229.7" y="452.2" text-anchor="middle">POOL 46'-0" × 70'-0"</text>
+<rect class="pool" x="173.6" y="199.1" width="112.2" height="152.8"/><text class="t3" x="229.7" y="275.4" text-anchor="middle">POOL 46'-0" × 70'-0"</text><text class="t2" x="60" y="60">N ↑</text></svg>

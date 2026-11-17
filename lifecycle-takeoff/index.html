@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Lifecycle Takeoff</title>
+  <meta name="description" content="Lifecycle Takeoff: build a model from an address, a 3D file or a drawing set, break the building into components and materials, count every EN 15978 module from real EPDs, model operational carbon by system, and compare reuse and rebuild scenarios. Tested on Mies van der Rohe's Seagram Building.">
+  <link rel="icon" href="data:," type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <meta name="theme-color" content="#080808">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+<div class="lt-app">
+  <header class="lt-top">
+    <div class="lt-brand">
+      <a class="lt-home" href="/" aria-label="Back to home"><i></i><i></i><i></i></a>
+      <span class="lt-logo">Lifecycle Takeoff</span>
+      <span class="lt-project" id="projectName">No project</span>
+    </div>
+    <nav class="lt-tabs" role="tablist" aria-label="Views">
+      <button role="tab" data-tab="model" aria-selected="true"><b>1</b> Model</button>
+      <button role="tab" data-tab="components" aria-selected="false"><b>2</b> Components</button>
+      <button role="tab" data-tab="lifecycle" aria-selected="false"><b>3</b> Lifecycle</button>
+      <button role="tab" data-tab="operational" aria-selected="false"><b>4</b> Operational</button>
+      <button role="tab" data-tab="compare" aria-selected="false"><b>5</b> Compare</button>
+      <button role="tab" data-tab="method" aria-selected="false">Method</button>
+    </nav>
+    <div class="lt-actions">
+      <button class="lt-btn" id="btnSeagram" type="button">Seagram test</button>
+      <div class="lt-menu-wrap">
+        <button class="lt-btn" id="btnExport" type="button" aria-haspopup="menu" aria-expanded="false">Export ↗</button>
+        <div class="lt-menu" id="exportMenu" role="menu" hidden>
+          <button role="menuitem" data-export="csv">Lifecycle table · CSV <small>every module, ND where not declared</small></button>
+          <button role="menuitem" data-export="json">Takeoff · JSON <small>building, components, EPDs, results</small></button>
+          <button role="menuitem" data-export="glb">3D model · GLB <small>quantities embedded</small></button>
+          <button role="menuitem" data-export="png">3D view · PNG</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <aside class="lt-side" id="side" aria-label="Project inputs">
+    <section class="lt-card">
+      <div class="lt-k">Project</div>
+      <label class="lt-field">Site address
+        <span class="lt-addr"><input type="text" id="addrIn" placeholder="e.g. 375 Park Avenue, New York" autocomplete="street-address"><button class="lt-btn small" id="btnAddr" type="button">Find</button></span>
+      </label>
+      <p class="lt-fine" id="addrInfo">Sets the site for transport routes, the electricity grid and the steam supplier.</p>
+      <label class="lt-field">Program <select id="programIn"></select></label>
+      <label class="lt-field">Gross floor area <span><input type="number" id="gfaIn" min="0" step="100"> <b class="lt-unit" data-area-unit>m²</b></span></label>
+      <label class="lt-field">Lifespan (study period) <span><input id="rsp" type="number" min="10" max="120" step="5" value="60"> years</span></label>
+    </section>
+    <section class="lt-card">
+      <div class="lt-k">Units</div>
+      <div class="lt-seg wide" role="group" aria-label="Area units" id="areaSeg"><button type="button" data-area="m2" aria-pressed="true">m²</button><button type="button" data-area="ft2" aria-pressed="false">ft²</button></div>
+      <div class="lt-seg wide" role="group" aria-label="GWP units" id="gwpSeg" style="margin-top:6px"><button type="button" data-gwp="t" aria-pressed="true">tCO2e</button><button type="button" data-gwp="kg" aria-pressed="false">kgCO2e</button><button type="button" data-gwp="area" aria-pressed="false">per <span data-area-unit>m²</span></button></div>
+    </section>
+    <section class="lt-card">
+      <div class="lt-k">Assessment</div>
+      <label class="lt-check"><input type="checkbox" id="calibrate" checked> Calibrate to documented quantities</label>
+      <label class="lt-check"><input type="checkbox" id="operational" checked> Include operational carbon (B6, B7)</label>
+      <label class="lt-field">Modules an EPD does not declare
+        <select id="fillIn"><option value="nd">Leave as not declared (EPD data only)</option><option value="fill">Fill with project scenarios</option></select>
+      </label>
+    </section>
+    <section class="lt-card" id="summary"></section>
+    <section class="lt-card" id="dqCard"></section>
+  </aside>
+
+  <main class="lt-main">
+    <section class="lt-view" id="view-model" role="tabpanel">
+      <div class="lt-inputs" aria-label="Add a building">
+        <div class="lt-in"><b>1</b><div><div class="lt-k">Address</div><span class="lt-addr"><input type="text" id="addrIn2" placeholder="Street address"><button class="lt-btn small" id="btnAddr2" type="button">Build from address</button></span><p class="lt-fine">Footprint and height from OpenStreetMap.</p></div></div>
+        <div class="lt-in"><b>2</b><div><div class="lt-k">3D model</div><label class="lt-btn small file">Choose model<input id="modelIn" type="file" accept=".3dm,.obj,.ifc,.glb,.gltf,.stl"></label><p class="lt-fine">Rhino .3dm, .obj, IFC, glTF/GLB, STL.</p></div></div>
+        <div class="lt-in"><b>3</b><div><div class="lt-k">Architectural documents</div><label class="lt-btn small file">Choose drawings<input id="fileIn" type="file" multiple accept=".pdf,.svg,.dxf,.png,.jpg,.jpeg,.webp"></label><p class="lt-fine">A full set: plans, sections, elevations, specs (PDF, SVG, DXF, scans).</p></div></div>
+        <div class="lt-in demo"><button class="lt-btn primary" id="btnSeagram2" type="button">Seagram Building demo</button><p class="lt-fine">Address, drawings and model of 375 Park Ave.</p></div>
+      </div>
+      <div class="lt-model">
+        <div class="lt-stage">
+          <div class="lt-stagebar">
+            <span class="lt-seg" role="group" aria-label="View"><button type="button" data-stage="3d" aria-pressed="true">3D model</button><button type="button" data-stage="docs" aria-pressed="false">Documents read</button></span>
+            <span class="lt-stagetools" id="tools3d">
+              <label class="lt-check"><input type="checkbox" id="realistic"> Realistic colours</label>
+              <label class="lt-mini">Explode all <input type="range" id="explode" min="0" max="1" step="0.01" value="0"></label>
+              <label class="lt-mini">Section <input type="range" id="cut" min="0" max="1" step="0.005" value="1"></label>
+              <button class="lt-btn small" id="btnRoundtrip" type="button" title="Export the model as GLB with its quantities, then read it back">GLB round trip</button>
+            </span>
+          </div>
+          <div class="lt-viewer" id="viewer"><div class="lt-viewer-msg" id="viewerMsg">Add a building by address, 3D model or drawings, or run the Seagram demo.</div></div>
+          <div class="lt-docs" id="docsPane" hidden>
+            <div class="lt-read">
+              <div class="lt-sheets" id="sheetStrip" role="listbox" aria-label="Sheets"></div>
+              <div class="lt-sheetview">
+                <div class="lt-sheettools">
+                  <span class="lt-k" id="sheetTitle"></span>
+                  <span class="lt-seg" role="group" aria-label="Overlay"><button type="button" data-ov="1" aria-pressed="true">Show what was read</button></span>
+                  <button class="lt-btn small" type="button" id="btnAI">Read with AI</button>
+                </div>
+                <div class="lt-canvas" id="sheetCanvas"></div>
+              </div>
+              <div class="lt-readinfo">
+                <div class="lt-k">Found on this sheet</div>
+                <ul class="lt-found" id="foundList"></ul>
+                <div id="aiBox"></div>
+              </div>
+            </div>
+          </div>
+          <p class="lt-fine" id="modelInfo"></p>
+        </div>
+        <div class="lt-mside">
+          <div class="lt-seg wide" role="tablist" aria-label="Breakdown" id="mSub"><button type="button" data-msub="materials" aria-pressed="true">Materials</button><button type="button" data-msub="systems" aria-pressed="false">Systems</button></div>
+          <div class="lt-ringrow"><div id="mRing"></div><div class="lt-ringside"><div class="lt-k">Share by</div><div class="lt-seg" role="group" aria-label="Share basis" id="mBasis"><button type="button" data-basis="mass" aria-pressed="true">Mass</button><button type="button" data-basis="gwp" aria-pressed="false">GWP</button></div><div id="mLegend"></div></div></div>
+          <div class="lt-mlisthead" id="mHead"></div>
+          <div id="mList" class="lt-mlist"></div>
+          <div class="lt-k" style="margin-top:12px">Selected</div>
+          <div id="pickInfo" class="lt-fine">Click a material, a system or an element.</div>
+          <details class="lt-prov-wrap" id="provWrap"><summary>Building as read <span class="lt-dim">edit any value</span></summary><div id="provTable"></div></details>
+          <div id="modelReport"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lt-view" id="view-components" role="tabpanel" hidden>
+      <div class="lt-ctools">
+        <span class="lt-seg" role="group" aria-label="View" id="cView"><button type="button" data-cview="pyramid" aria-pressed="true">Pyramid</button><button type="button" data-cview="table" aria-pressed="false">Table</button></span>
+        <span class="lt-k" style="margin:0">Sort and scale by</span>
+        <span class="lt-seg" role="group" aria-label="Sort" id="cSort"><button type="button" data-csort="code" aria-pressed="false">Code</button><button type="button" data-csort="qty" aria-pressed="false">Quantity</button><button type="button" data-csort="mass" aria-pressed="false">Mass</button><button type="button" data-csort="gwp" aria-pressed="true">GWP</button><button type="button" data-csort="int" aria-pressed="false">GWP per kg</button></span>
+        <span id="cFilter" class="lt-chips"></span>
+      </div>
+      <div class="lt-csplit">
+        <div id="compPyr"></div>
+        <div id="compTable"></div>
+        <aside class="lt-cdetail" id="compDetail"></aside>
+      </div>
+      <div id="calBox"></div>
+    </section>
+
+    <section class="lt-view" id="view-lifecycle" role="tabpanel" hidden>
+      <div class="lt-lchead">
+        <div id="letiBox"></div>
+        <div class="lt-lcctl">
+          <span class="lt-seg" role="group" aria-label="Rows" id="lcRows"><button type="button" data-lcrows="materials" aria-pressed="true">By material</button><button type="button" data-lcrows="components" aria-pressed="false">By component</button></span>
+          <div class="lt-legend" id="lcLegend"></div>
+        </div>
+      </div>
+      <div id="stageBars"></div>
+      <div class="lt-lcgrid">
+        <div class="lt-tablewrap" id="lcWrap"><table class="lt-lc" id="lcTable"></table></div>
+        <aside class="lt-mapcard"><div class="lt-k">Where it happens <span class="lt-dim" id="mapWhat">roll over a cell</span></div><div id="worldMap" class="lt-map"></div><div id="mapNote" class="lt-fine"></div></aside>
+      </div>
+      <div class="lt-split three">
+        <div><div class="lt-k">Hotspots</div><div id="hotspots"></div></div>
+        <div><div class="lt-k">EPD coverage</div><div id="byMat"></div></div>
+        <div><div class="lt-k">Notes on this result</div><div id="lcNotes"></div></div>
+      </div>
+    </section>
+
+    <section class="lt-view" id="view-operational" role="tabpanel" hidden>
+      <div class="lt-ophead" id="opHead"></div>
+      <div class="lt-opgrid">
+        <div><div class="lt-k">Systems by end use <span class="lt-dim">mechanical system · passive measures · energy source</span></div><div id="opTable"></div></div>
+        <div id="opViz"></div>
+      </div>
+      <div class="lt-split" style="margin-top:18px"><div id="opArea"></div><div id="opCross"></div></div>
+      <div id="opNotes" class="lt-fine"></div>
+    </section>
+
+    <section class="lt-view" id="view-compare" role="tabpanel" hidden>
+      <div class="lt-builder" id="builder"></div>
+      <div class="lt-k" style="margin-top:20px">Saved scenarios <span class="lt-dim">same takeoff, same EPDs, same energy model</span></div>
+      <div id="compareChart"></div>
+      <div id="compareTable"></div>
+      <p class="lt-fine" id="compareNote"></p>
+    </section>
+
+    <section class="lt-view lt-prose" id="view-method" role="tabpanel" hidden></section>
+  </main>
+</div>
+<div class="lt-tip" id="tip" role="tooltip" hidden></div>
+<div class="lt-toast" id="toast" role="status" aria-live="polite" hidden></div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
