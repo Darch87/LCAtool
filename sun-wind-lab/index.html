@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Sun &amp; Wind Lab</title>
+  <meta name="description" content="Sun &amp; Wind Lab: solar, energy and wind-tunnel (CFD) analysis in one 3D model. Test case: the Seagram Building and its Midtown block, with shadows, sun hours, façade irradiance, a live lattice-Boltzmann wind tunnel, Lawson wind comfort, outdoor thermal comfort and a façade energy model.">
+  <link rel="icon" href="data:," type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <meta name="theme-color" content="#080808">
+  <script>
+    // Optional: Google Maps Platform key for photoreal 3D tiles (restrict it to your domain).
+    window.GOOGLE_MAPS_KEY = "";
+  </script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="sw-app" id="app">
+    <header class="sw-top">
+      <div class="sw-brand">
+        <a class="sw-home" href="/" aria-label="Back to home"><i></i><i></i><i></i></a>
+        <span class="sw-logo">Sun &amp; Wind Lab</span>
+        <span class="sw-chip" title="375 Park Avenue, Ludwig Mies van der Rohe with Philip Johnson, 1958">Seagram Building · 375 Park Ave</span>
+      </div>
+      <nav class="sw-lenses" role="tablist" aria-label="Analysis lens">
+        <button role="tab" data-lens="sun" aria-selected="true"><i class="d y"></i>Sun</button>
+        <button role="tab" data-lens="wind" aria-selected="false"><i class="d c"></i>Wind</button>
+        <button role="tab" data-lens="comfort" aria-selected="false"><i class="d m"></i>Comfort</button>
+        <button role="tab" data-lens="energy" aria-selected="false"><i class="d w"></i>Energy</button>
+      </nav>
+      <div class="sw-actions">
+        <label class="sw-btn file" title="Replace the built-in typical year with an EnergyPlus weather file (EPW), e.g. from climate.onebuilding.org">Weather: <b id="climate-label">NYC typical year</b><input type="file" id="epw-file" accept=".epw,text/plain"></label>
+        <div class="sw-menu-wrap">
+          <button class="sw-btn primary" id="btn-export" type="button" aria-haspopup="menu" aria-expanded="false">Export <span aria-hidden="true">↗</span></button>
+          <div class="sw-menu" id="export-menu" role="menu" hidden>
+            <button role="menuitem" data-export="png">View · PNG <small>2× viewport</small></button>
+            <button role="menuitem" data-export="ground">Ground results · CSV <small>sun, wind, comfort per point</small></button>
+            <button role="menuitem" data-export="facade">Façade results · CSV <small>irradiance, pressure</small></button>
+            <button role="menuitem" data-export="summary">Summary · JSON <small>scenario, KPIs, energy</small></button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <aside class="sw-left" aria-label="Layers and scenario">
+      <div class="sw-k-head"><span class="sw-k">Layers</span><span class="sw-k dim" id="lens-name">Sun</span></div>
+      <div class="sw-layers" id="layers" role="radiogroup" aria-label="Analysis layer"></div>
+
+      <div class="sw-k-head"><span class="sw-k">Design what-ifs</span><button class="sw-link" id="btn-reset" type="button">Reset</button></div>
+      <div class="sw-whatifs">
+        <div class="sw-row sw-row-switch"><span class="lab">Neighbouring towers</span><button class="sw-switch" id="t-context" role="switch" aria-checked="true" aria-label="Show neighbouring buildings"></button></div>
+        <div class="sw-row">
+          <div class="sw-row-top"><label for="r-height">Tower height</label><span class="sw-val"><b id="v-height">157</b><small>m</small></span></div>
+          <input type="range" id="r-height" min="60" max="320" step="1" value="157">
+        </div>
+        <div class="sw-row sw-row-switch"><span class="lab">Plaza wind canopy</span><button class="sw-switch" id="t-canopy" role="switch" aria-checked="false" aria-label="Add a canopy over the plaza"></button></div>
+        <div class="sw-row">
+          <div class="sw-row-top"><label for="s-glazing">Glazing</label></div>
+          <select id="s-glazing" class="sw-select"></select>
+        </div>
+        <div class="sw-row">
+          <div class="sw-row-top"><label for="r-overhang">Overhang per floor</label><span class="sw-val"><b id="v-overhang">0.0</b><small>m</small></span></div>
+          <input type="range" id="r-overhang" min="0" max="1.5" step="0.05" value="0">
+        </div>
+        <div class="sw-row">
+          <div class="sw-row-top"><label for="r-fins">Vertical fin depth</label><span class="sw-val"><b id="v-fins">0.15</b><small>m</small></span></div>
+          <input type="range" id="r-fins" min="0" max="1" step="0.01" value="0.15">
+          <p class="sw-note">0.15 m is Seagram's bronze I-beam mullion, every 1.41 m.</p>
+        </div>
+        <div class="sw-row">
+          <div class="sw-row-top"><label for="s-heating">Heating plant</label></div>
+          <select id="s-heating" class="sw-select"></select>
+        </div>
+      </div>
+
+      <div class="sw-wind-run" id="wind-run">
+        <div class="sw-k-head"><span class="sw-k">Wind tunnel</span><span class="sw-k dim" id="wind-src">Baseline · 16 directions</span></div>
+        <p class="sw-note" id="wind-stale-note">Precomputed for the existing block. Change the massing and the tunnel re-runs here, in your browser.</p>
+        <div class="sw-row">
+          <div class="sw-row-top"><label for="s-res">Resolution</label></div>
+          <div class="sw-segs" id="s-res" role="group" aria-label="Tunnel resolution">
+            <button type="button" data-res="8" aria-pressed="true">Quick · 8 m</button>
+            <button type="button" data-res="6" aria-pressed="false">Standard · 6 m</button>
+          </div>
+        </div>
+        <div class="sw-run-btns">
+          <button class="sw-btn small" id="btn-run-one" type="button">Run this direction</button>
+          <button class="sw-btn small" id="btn-run-all" type="button">Run all 16</button>
+          <button class="sw-btn small" id="btn-run-stop" type="button" hidden>Stop</button>
+        </div>
+        <div class="sw-progress" id="run-progress" hidden><i id="run-bar"></i><span id="run-label"></span></div>
+      </div>
+    </aside>
+
+    <main class="sw-stage" id="stage">
+      <canvas id="view" aria-label="3D model of the Seagram Building and its block. Drag to orbit, scroll or pinch to zoom, hover to read values."></canvas>
+      <div class="sw-stage-head">
+        <span class="sw-eyebrow" id="stage-eyebrow">Sun · shadows</span>
+        <h1 id="stage-title">Shadows at this moment</h1>
+        <span class="sw-sub" id="stage-sub"></span>
+      </div>
+      <div class="sw-dial-wrap" id="dial-wrap">
+        <svg id="dial" viewBox="-60 -60 120 120" role="img" aria-label="Wind rose and wind direction. Click a sector to choose the wind direction."></svg>
+        <div class="sw-dial-cap"><span id="dial-label">From NW · 6.2 m/s</span><button class="sw-link" id="btn-follow" type="button" aria-pressed="true">Follow the month</button></div>
+      </div>
+      <div class="sw-legend" id="legend" hidden></div>
+      <div class="sw-probe" id="probe" hidden></div>
+      <div class="sw-align" id="align" hidden>
+        <div class="sw-align-head"><span class="sw-k">Line up Google 3D</span><button class="sw-link" id="align-close" type="button">Done</button></div>
+        <p class="sw-note">The yellow outline is the analysis massing. Nudge the photoreal city until the real Seagram sits inside it.</p>
+        <div class="sw-align-grid">
+          <button type="button" data-nudge="dn:1" title="North 1 m">N</button>
+          <button type="button" data-nudge="de:-1" title="West 1 m">W</button>
+          <button type="button" data-nudge="de:1" title="East 1 m">E</button>
+          <button type="button" data-nudge="dn:-1" title="South 1 m">S</button>
+          <button type="button" data-nudge="rot:0.5" title="Turn 0.5° anticlockwise">⟲</button>
+          <button type="button" data-nudge="rot:-0.5" title="Turn 0.5° clockwise">⟳</button>
+          <button type="button" data-nudge="dz:0.5" title="Up 0.5 m">▲</button>
+          <button type="button" data-nudge="dz:-0.5" title="Down 0.5 m">▼</button>
+        </div>
+        <div class="sw-run-btns"><button class="sw-btn small" id="align-snap" type="button">Snap to ground</button><button class="sw-btn small" id="align-reset" type="button">Reset</button></div>
+        <p class="sw-note" id="align-read"></p>
+      </div>
+      <div class="sw-credit" id="photo-credit" hidden></div>
+      <div class="sw-live" id="live-pill" hidden><i></i><span id="live-label">Tunnel running</span></div>
+      <nav class="sw-toolbar" aria-label="View">
+        <button data-cam="persp" type="button" class="on">Perspective</button>
+        <button data-cam="top" type="button">Plan</button>
+        <button data-cam="street" type="button">Park Ave</button>
+        <span class="sw-sep"></span>
+        <button data-tog="particles" type="button" aria-pressed="true" title="Animated wind particles">Particles</button>
+        <button data-tog="sunpath" type="button" aria-pressed="true" title="Sun path for the chosen date">Sun path</button>
+        <button data-tog="labels" type="button" aria-pressed="false" title="Name the buildings">Labels</button>
+        <button data-tog="photoreal" type="button" aria-pressed="false" title="Google Photorealistic 3D Tiles around the analysis model">Photoreal</button>
+      </nav>
+      <div class="sw-time" aria-label="Date and time">
+        <button class="sw-icon" id="btn-play" type="button" aria-label="Play the day" aria-pressed="false"><svg viewBox="0 0 20 20"><path d="M6 4l10 6-10 6z"/></svg></button>
+        <div class="sw-slide">
+          <div class="sw-slide-top"><label for="r-day">Date</label><b id="v-day">Jun 21</b></div>
+          <input type="range" id="r-day" min="1" max="365" step="1" value="172">
+          <div class="sw-ticks" aria-hidden="true"><span>J</span><span>F</span><span>M</span><span>A</span><span>M</span><span>J</span><span>J</span><span>A</span><span>S</span><span>O</span><span>N</span><span>D</span></div>
+        </div>
+        <div class="sw-slide">
+          <div class="sw-slide-top"><label for="r-time">Time</label><b id="v-time">1:00 pm</b></div>
+          <input type="range" id="r-time" min="300" max="1260" step="5" value="780">
+        </div>
+        <div class="sw-season" id="season" role="group" aria-label="Season for comfort autonomy" hidden>
+          <button type="button" data-season="spring" aria-pressed="true">Spring</button>
+          <button type="button" data-season="summer" aria-pressed="false">Summer</button>
+          <button type="button" data-season="autumn" aria-pressed="false">Autumn</button>
+          <button type="button" data-season="winter" aria-pressed="false">Winter</button>
+        </div>
+      </div>
+      <div class="sw-loading" id="loading"><i></i><span id="loading-label">Building the block…</span></div>
+      <div class="sw-toast" id="toast" role="status" hidden></div>
+    </main>
+
+    <aside class="sw-right" aria-label="Results">
+      <div class="sw-results" id="results"></div>
+      <footer class="sw-foot"><span class="sw-foot-dot"></span><span id="foot-note">Screening-grade · one model, two physics</span><button class="sw-link" id="btn-method" type="button">Method &amp; sources</button></footer>
+    </aside>
+  </div>
+
+  <div class="sw-drawer" id="method" role="dialog" aria-modal="true" aria-labelledby="method-title" hidden>
+    <div class="sw-drawer-card">
+      <div class="sw-drawer-head"><h2 id="method-title">Method &amp; sources</h2><button class="sw-icon" id="method-close" type="button" aria-label="Close">×</button></div>
+      <div class="sw-method">
+        <section><h3>What this combines</h3><p>Architects usually run sun and wind in separate tools: Ladybug / Honeybee or ClimateStudio for sun, daylight and energy; SimScale, Orbital Stack or Autodesk Forma for wind. Forma is the closest to one place, with rapid machine-learning wind and solar side by side. Sun &amp; Wind Lab puts both physics on one model, one timeline and one probe, and lets them talk: shade and wind feed one outdoor-comfort map, and the wind tunnel's façade pressures drive the energy model's air leakage.</p></section>
+        <section><h3>Model</h3><p>The context is every building within 300 m of the tower from NYC's official Building Footprints (NYC Open Data, photogrammetric footprints with surveyed roof heights), turned into prisms on Manhattan's grid, which runs 29° east of true north. Citigroup Center is lifted onto its base, as built. The Seagram Building itself is modelled by hand, because the city records it as one footprint at one height: its plan follows that footprint (slab, ten-storey bustle, five-storey wings and the light courts between them) and its heights follow the published section, with the slab rising 516 ft (157 m) behind the 90 ft plaza. The city footprint also georeferences the model. Setbacks above the base of neighbouring towers are not in the city data, so each neighbour rises at its footprint to its roof height.</p></section>
+        <section><h3>Sun</h3><p>Sun position uses NOAA's solar equations. Each month is represented by its standard mean day, hour by hour. Irradiance takes each month's average daily total from the climate data, shapes it across the day with a clear-sky curve, and splits beam from diffuse with the Erbs monthly correlation. Shading is exact ray casting against the model: one ray per sensor per sun position, and 128 cosine-weighted rays per sensor for sky view and ground reflection (albedo 0.2). Sensors sit every 3 m on the façades and the ground.</p></section>
+        <section><h3>Wind tunnel</h3><p>A three-dimensional lattice-Boltzmann solver (D3Q19, BGK collision with a Smagorinsky large-eddy closure) runs the flow around the block. The approach wind is a dense-urban power-law boundary layer (exponent 0.27, gradient height 450 m, after the AIJ guidelines). The ground is a rough partial-slip wall, the sides and top slip, and the buildings are rotated into the tunnel for each of 16 directions. The baseline uses 6 m cells; live re-runs in the browser use 6 or 8 m. Pedestrian speeds are read on the second cell above the ground and brought down to 2 m with the approach profile. Results are time-averaged after the flow has developed.</p></section>
+        <section><h3>Wind comfort</h3><p>Each point gets a speed ratio per direction (local mean wind ÷ airport 10 m wind). Combined with the wind rose and a Weibull fit per sector, that gives the share of hours above each Lawson LDDC threshold: sitting 4 m/s, standing 6, strolling 8, business walking 10, each at 5% of hours. Speeds are gust-equivalent means (the larger of the mean and (mean + 3σ) ÷ 1.85, from the tunnel's own fluctuations). Safety flags 15 m/s and 20 m/s exceeded more than 0.022% of the year (about two hours).</p></section>
+        <section><h3>Outdoor comfort</h3><p>"Feels like" is Steadman's apparent temperature with radiation: air temperature, humidity, the local wind from the tunnel, and the extra sun a person absorbs when the point is in direct sun (plus a little more where the sky is very open). Bands follow UTCI's thermal-stress labels. Comfort autonomy is the share of daytime hours (8 am–7 pm) in a season with no thermal stress, weighting every wind direction by the rose.</p></section>
+        <section><h3>Energy</h3><p>A monthly quasi-steady-state balance (ISO 13790) for the whole Seagram complex: conduction through glass, spandrels and roof; ventilation at 0.5 L/s·m² while occupied; solar gains from the façade sensors through the glass, net of fins and overhangs; office internal gains; and air leakage from wind and stack pressure, where the wind part uses the tunnel's façade-to-façade pressure difference for each direction. Heating plant efficiency and a chiller COP of 4.5 turn loads into site energy, plus lighting, plugs, fans and pumps. It is a screening model for comparing options, not a calibrated simulation of the real building.</p></section>
+        <section><h3>Climate</h3><p>The built-in typical year is assembled from monthly values: NOAA 1991–2020 normals for Central Park (temperature, humidity), NREL solar resource for New York City (daily global irradiation), and an approximate LaGuardia wind rose. Load an EPW weather file to replace all of it with measured hourly data; the rose, Weibull fits, temperatures and irradiance are rebuilt from the file.</p></section>
+        <section><h3>Google 3D context</h3><p>The Photoreal toggle streams Google Photorealistic 3D Tiles (Map Tiles API, with the site's key) into the same scene, turned onto Manhattan's grid, so the analysis sits in the real city. It is context only: sun and wind are computed on the model massing, shown as a yellow outline, because the tiles' terms do not allow extracting geometry from them. Nudge and snap controls line the two up; the offsets are saved in your browser.</p></section>
+        <section><h3>Limits</h3><p>Everything here is early-design screening, like Forma's rapid mode. 6 m cells resolve the tower and the streets but not doorways, trees or the plaza's pools; neighbours are boxes. Lawson results are sensitive to the wind climate. Before decisions, verify wind with a boundary-layer wind tunnel or detailed CFD, and energy with a calibrated EnergyPlus model.</p></section>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
